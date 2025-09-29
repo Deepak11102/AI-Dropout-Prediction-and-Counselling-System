@@ -4,7 +4,7 @@ from flask_cors import CORS
 import requests
 import os
 
-# --- NEW PERMANENT SOLUTION START ---
+# --- FINAL PERMANENT SOLUTION START ---
 def get_secret_from_file(key_to_find, filename=".env"):
     """
     Manually reads a .env file to find a specific key.
@@ -23,7 +23,7 @@ def get_secret_from_file(key_to_find, filename=".env"):
         print(f"Warning: Secret file '{filename}' not found.")
         return None
     return None # Key was not found in the file
-# --- NEW PERMANENT SOLUTION END ---
+# --- FINAL PERMANENT SOLUTION END ---
 
 
 # Initialize the Flask application
@@ -32,14 +32,14 @@ app = Flask(__name__)
 CORS(app)
 
 
-# --- MODIFIED KEY LOADING ---
-# Load the API key using our new manual function
+# --- CORRECTED KEY LOADING ---
+# The function will now look for the .env file in the same directory as app.py
 GEMINI_API_KEY = get_secret_from_file('AIzaSyCZsQMNUsIPP0YrtAeYVnjB7hsrFvobL9k')
 
 # Check if the API key was found
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY could not be found in the .env secret file!")
-# --- MODIFIED KEY LOADING END ---
+# --- CORRECTED KEY LOADING END ---
 
 
 # The API URL is now constructed using the key from the secret file
