@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Sentinel - Early Alert System</title>
+    <!-- QR Code Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-primary: #0A0D15;
+            --bg-secondary: #1A1F2C;
+            --glass-bg: rgba(26, 31, 44, 0.7);
+            --border-color: rgba(0, 245, 212, 0.25);
+            --text-primary: #E0E0E0;
+            --text-secondary: #8A93A7;
+            --accent-primary: #00F5D4;
+            --accent-secondary: #00A8F5;
+            --risk-high: #FF00A8;
+            --risk-med: #FFD60A;
+            --risk-low: #39D45A;
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* --- General & Helpers --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            margin: 0;
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+        .hidden { display: none !important; }
+
+        /* --- Dynamic Cosmic Background --- */
+        #cosmic-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* --- Login Screen --- */
+        #login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .portal-box {
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px 40px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            z-index: 1;
+        }
+
+        .portal-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+        .portal-header img { height: 60px; border-radius: 50%; }
+        .portal-header .address { text-align: left; }
+        .portal-header h2 { margin: 0; font-size: 1.2rem; color: var(--accent-primary); }
+        .portal-header p { margin: 0; font-size: 0.9rem; color: var(--text-secondary); }
+
+        .portal-buttons { display: flex; gap: 20px; justify-content: center; }
+        .portal-btn {
+            background-color: var(--bg-secondary);
+            color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.2s ease;
+        }
+        .portal-btn:hover {
+            transform: translateY(-5px);
+            background-color: var(--accent-primary);
+            color: var(--bg-primary);
+            box-shadow: 0 8px 20px rgba(0, 245, 212, 0.3);
+        }
+        .portal-btn svg { width: 40px; height: 40px; }
+
+        .login-box {
+            position: relative;
+            background: transparent;
+            padding: 0;
+            border: none;
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+        .back-btn {
+            position: absolute;
+            top: -10px;
+            left: -20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 10px;
+        }
+        .back-btn:hover { color: var(--accent-primary); }
+        .login-box h1 { color: var(--accent-primary); font-size: 1.8rem; }
+        .login-form input {
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);
+            border-radius: 8px; box-sizing: border-box; font-size: 16px;
+            background-color: rgba(0,0,0,0.3); color: var(--text-primary);
+        }
+        .login-form button {
+            width: 100%; padding: 14px; border: none; border-radius: 8px;
+            background: linear-gradient(45deg, var(--accent-secondary), var(--accent-primary));
+            color: var(--bg-primary); font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .login-form button:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-primary); }
+        .login-info { font-size: 12px; color: var(--text-secondary); margin-top: 20px; line-height: 1.5; text-align: left; }
+        
+        .auth-toggle { display: flex; align-items: center; justify-content: center; margin-top: 20px; gap: 10px; color: var(--text-secondary); font-size: 14px;}
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-primary); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* --- Dashboard Styles --- */
+        #counselor-dashboard, #student-dashboard { display: flex; flex-direction: column; height: 100vh; }
+        header { padding: 15px 30px; flex-shrink: 0; background-color: rgba(16, 20, 28, 0.8); backdrop-filter: blur(5px); }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .header-content h1 { font-size: 24px; color: var(--accent-primary); text-shadow: 0 0 5px var(--accent-primary); margin: 0; }
+        .logout-btn { background: transparent; border: 1px solid var(--border-color); color: var(--accent-primary); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
+        .logout-btn:hover { background-color: var(--accent-primary); color: var(--bg-primary); box-shadow: 0 0 15px var(--accent-primary); }
+        
+        /* Counselor Dashboard */
+        .main-content { display: flex; gap: 30px; flex-grow: 1; overflow: hidden; padding: 30px; }
+        .students-section { flex-basis: 60%; display: flex; flex-direction: column; gap: 20px; }
+        .students-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+        .students-header button { background: var(--accent-secondary); color: white; border: none; padding: 10px 18px; font-weight: 600; border-radius: 8px; cursor: pointer; }
+        .students-queue { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .student-card { display: flex; align-items: center; gap: 20px; padding: 15px; border-left: 5px solid; border-radius: 8px; margin-bottom: 15px; cursor: pointer; transition: all 0.2s ease-in-out; background-color: var(--bg-secondary); }
+        .student-card.high-risk { border-left-color: var(--risk-high); }
+        .student-card.medium-risk { border-left-color: var(--risk-med); }
+        .student-card.low-risk { border-left-color: var(--risk-low); }
+        .student-card:hover, .student-card.selected { transform: scale(1.02); background-color: rgba(0, 245, 212, 0.1); border-color: var(--accent-primary); box-shadow: 0 0 15px rgba(0, 245, 212, 0.5); }
+        .risk-score h2 { margin: 0; font-size: 2rem; }
+        .risk-score.high-risk h2 { color: var(--risk-high); }
+        .risk-score.medium-risk h2 { color: var(--risk-med); }
+        .risk-score.low-risk h2 { color: var(--risk-low); }
+        .student-info h3 { margin: 0 0 5px; } .student-info p { margin: 0; color: var(--text-secondary); }
+        .deep-dive { flex-basis: 40%; }
+        .xai-panel { margin-top: 20px; }
+        .xai-factor { margin-bottom: 15px; }
+        .xai-factor label { font-size: 16px; color: var(--text-primary); }
+        .progress-bar { height: 10px; background-color: rgba(0,0,0,0.3); border-radius: 5px; margin-top: 5px; overflow: hidden; }
+        .progress-bar > div { height: 100%; background: linear-gradient(to right, var(--risk-med), var(--risk-high)); border-radius: 5px; }
+        .deep-dive-actions { margin-top: 25px; display: flex; gap: 15px; }
+        .deep-dive-actions button { flex-grow: 1; padding: 12px; font-size: 1rem; }
+
+        /* Student Dashboard */
+        .student-body { display: flex; flex-grow: 1; overflow: hidden; gap: 30px; padding: 30px; }
+        .student-nav { flex-basis: 250px; flex-shrink: 0; }
+        .student-content { flex-grow: 1; overflow-y: auto; padding-right: 15px; }
+        .nav-menu button { display: block; width: 100%; text-align: left; padding: 15px 20px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; font-weight: 500; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; border-radius: 0 8px 8px 0; }
+        .nav-menu button:hover { background-color: rgba(0, 245, 212, 0.1); color: var(--accent-primary); }
+        .nav-menu button.active { color: var(--accent-primary); border-left-color: var(--accent-primary); font-weight: 700; background-color: rgba(0, 245, 212, 0.05); }
+        .content-panel { display: none; }
+        .content-panel.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid var(--border-color); padding: 30px; }
+        .glass-card h2 { margin-top: 0; color: var(--accent-primary); }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .profile-item { background: var(--bg-secondary); padding: 15px; border-radius: 8px; }
+        .profile-item label { font-size: 14px; color: var(--text-secondary); display: block; margin-bottom: 5px; }
+        .profile-item p, .profile-item input { margin: 0; font-size: 16px; font-weight: 500; color: var(--text-primary); }
+        .profile-item input { width: 100%; box-sizing: border-box; background: #2a2f3c; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .results-table th, .results-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .results-table th { color: var(--accent-primary); }
+        .fees-status { text-align: center; padding: 40px 0; }
+        .fees-status p { font-size: 24px; font-weight: 600; }
+        .fees-status.paid p { color: var(--risk-low); }
+        .fees-status.due p { color: var(--risk-med); }
+        #qr-code-container { text-align: center; }
+        #qr-code { margin-top: 20px; padding: 10px; background: white; border-radius: 8px; display: inline-block; }
+        #student-reader { width: 100%; max-width: 400px; border: 2px solid var(--border-color); border-radius: 16px; margin: 20px auto; }
+        .forum-post { background: var(--bg-secondary); padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+        .post-header { display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 14px; margin-bottom: 10px; }
+        .post-author { font-weight: 600; color: var(--accent-secondary); }
+        .post-content { line-height: 1.6; }
+        #new-post-form textarea { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; color: var(--text-primary); min-height: 80px; margin-bottom: 10px; box-sizing: border-box;}
+        #new-post-form button { background: var(--accent-primary); color: var(--bg-primary); border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; float: right; }
+        #chatbot-container { height: 100%; display: flex; flex-direction: column; }
+        .chat-messages { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { padding: 10px 15px; border-radius: 18px; max-width: 80%; line-height: 1.4; }
+        .bot-message { background-color: var(--bg-secondary); border-bottom-left-radius: 4px; align-self: flex-start; }
+        .user-message { background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary)); border-bottom-right-radius: 4px; align-self: flex-end; color: #fff; }
+        #chat-input-form { display: flex; padding: 10px 0; border-top: 1px solid var(--border-color); margin-top: 10px; }
+        #chat-input { flex-grow: 1; border: none; padding: 10px; border-radius: 8px; margin-right: 10px; background-color: var(--bg-secondary); color: var(--text-primary); }
+        #chat-send-btn { border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; background-color: var(--accent-primary); color: var(--bg-primary); }
+        .chat-suggestions { display: flex; gap: 10px; padding: 10px 0; overflow-x: auto; }
+        .suggestion-chip { background-color: var(--bg-secondary); padding: 8px 12px; border-radius: 20px; cursor: pointer; transition: background-color 0.2s; font-size: 14px; white-space: nowrap; border: 1px solid var(--border-color); }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: var(--bg-secondary); padding: 30px; max-width: 500px; text-align: center; border-radius: 16px; border: 1px solid var(--border-color); }
+        .modal-content h2 { color: var(--accent-primary); margin-top: 0; margin-bottom: 15px; }
+        .modal-content p { color: var(--text-primary); margin-bottom: 25px; }
+        .modal-close-btn { background-color: var(--accent-primary); color: var(--bg-primary); padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        #enroll-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;}
+        #enroll-form label { color: var(--text-secondary); margin-bottom: 5px; font-size: 14px; }
+        #enroll-form input { width: 100%; }
+        #enroll-form button { grid-column: 1 / -1; }
+
+    </style>
+</head>
+<body>
+    <canvas id="cosmic-background"></canvas>
+
+    <div id="login-screen">
+        <div class="portal-box">
+            <div class="portal-header">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/36/Indian_Institute_of_Information_Technology%2C_Bhopal_Logo.png/250px-Indian_Institute_of_Information_Technology%2C_Bhopal_Logo.png" alt="IIIT Bhopal Logo">
+                <div class="address">
+                    <h2>Indian Institute of Information Technology</h2>
+                    <p>Bhopal, Madhya Pradesh, India - 462003</p>
+                </div>
+            </div>
+            
+            <div id="portal-initial-view">
+                <div class="portal-buttons">
+                    <button class="portal-btn" id="show-counselor-login">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span>Counselor Login</span>
+                    </button>
+                    <button class="portal-btn" id="show-student-login">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-12 0"/><circle cx="12" cy="11" r="4"/><path d="M12 3a8 8 0 0 1 8 8c0 1.44-.39 2.78-.97 3.9"/></svg>
+                        <span>Student Login</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="counselor-login-view" class="hidden">
+                <div class="login-box">
+                    <button class="back-btn">←</button>
+                    <h1>🎓 Counselor Portal</h1>
+                    <form class="login-form" id="counselor-login-form">
+                        <input type="text" id="counselor-username" placeholder="Counselor Username" required>
+                        <input type="password" id="counselor-password" placeholder="Password" required>
+                        <button type="submit">Login as Counselor</button>
+                    </form>
+                    <div id="login-error-counselor" class="login-error hidden" style="color: var(--risk-high); margin-top: 10px;"></div>
+                    <div class="auth-toggle">
+                        <label class="switch"><input type="checkbox" class="auth-mode-toggle" data-role="counselor"><span class="slider"></span></label>
+                        <span>Sign Up Mode</span>
+                    </div>
+                    <div class="login-info"><b>Demo Login:</b><br>Username: `counselor`<br>Password: `pass123`</div>
+                </div>
+            </div>
+            
+            <div id="student-login-view" class="hidden">
+                 <div class="login-box">
+                    <button class="back-btn">←</button>
+                    <h1>👤 Student Portal</h1>
+                    <form class="login-form" id="student-login-form">
+                        <input type="text" id="student-username" placeholder="Full Name (e.g., Alex Johnson)" required>
+                        <input type="password" id="student-password" placeholder="Password" required>
+                        <button type="submit">Login as Student</button>
+                    </form>
+                    <div id="login-error-student" class="login-error hidden" style="color: var(--risk-high); margin-top: 10px;"></div>
+                    <div class="auth-toggle">
+                        <label class="switch"><input type="checkbox" class="auth-mode-toggle" data-role="student"><span class="slider"></span></label>
+                        <span>Sign Up Mode</span>
+                    </div>
+                    <div class="login-info"><b>Demo Logins (Case-Sensitive):</b><br>Alex Johnson / pass123<br>Brenda Smith / pass123<br>Charles Lee / pass123<br>Diana Ross / pass123</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="counselor-dashboard" class="hidden">
+        <header>
+            <div class="header-content">
+                <h1>Sentinel Dashboard</h1>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </header>
+        <div class="main-content">
+            <div class="students-section glass-card">
+                <div class="students-header">
+                    <h2>Risk-Priority Queue</h2>
+                    <button onclick="openEnrollModal()">+ Enroll New Student</button>
+                </div>
+                <div class="students-queue" id="students-list">
+                    <!-- Student cards will be injected here by JS -->
+                </div>
+            </div>
+            <div class="deep-dive glass-card">
+                <div id="deep-dive-placeholder">
+                    <h2>Select a student to see a detailed breakdown.</h2>
+                </div>
+                <div id="deep-dive-content" class="hidden">
+                    <h2 id="student-detail-title">Deep Dive</h2>
+                    <div class="xai-panel">
+                        <h3>Top Risk Factors</h3>
+                        <div id="lime-explanation">
+                            <!-- LIME explanations injected here -->
+                        </div>
+                    </div>
+                    <div class="deep-dive-actions">
+                        <button class="portal-btn" onclick="handleCounselorAction('Contact Student')">Contact Student</button>
+                        <button class="portal-btn" onclick="handleCounselorAction('Schedule Meeting')">Schedule Meeting</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="student-dashboard" class="hidden">
+        <header>
+            <div class="header-content">
+                <h1 id="student-welcome">Welcome!</h1>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </header>
+        <div class="student-body">
+            <div class="student-nav">
+                <nav class="nav-menu">
+                    <button class="student-tab active" onclick="switchTab('profile')">👤 Profile</button>
+                    <button class="student-tab" onclick="switchTab('results')">📊 Results</button>
+                    <button class="student-tab" onclick="switchTab('fees')">💰 Fees</button>
+                    <button class="student-tab" onclick="switchTab('attendance')">✅ Attendance</button>
+                    <button class="student-tab" onclick="switchTab('forum')">🌐 Forum</button>
+                    <button class="student-tab" onclick="switchTab('chatbot')">🤖 AI Assistant</button>
+                </nav>
+            </div>
+            <div class="student-content">
+                <div id="profile-panel" class="content-panel active">
+                    <div class="glass-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2>Student Profile</h2>
+                            <button class="logout-btn" onclick="toggleProfileEdit(this)">✏️ Edit Profile</button>
+                        </div>
+                        <div class="profile-grid" id="profile-details">
+                            <!-- Profile data injected by JS -->
+                        </div>
+                    </div>
+                </div>
+                <div id="results-panel" class="content-panel">
+                     <div class="glass-card">
+                        <h2>Academic Results</h2>
+                        <table class="results-table">
+                            <thead><tr><th>Semester</th><th>SGPA</th><th>Status</th></tr></thead>
+                            <tbody id="results-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="fees-panel" class="content-panel">
+                    <div class="glass-card">
+                        <h2>Fee Status</h2>
+                        <div id="fees-status-container" class="fees-status due">
+                           <!-- Fee status injected by JS -->
+                        </div>
+                    </div>
+                </div>
+                <div id="attendance-panel" class="content-panel">
+                    <div class="glass-card">
+                        <h2>Mark Attendance</h2>
+                        <p>Generate a QR code for your instructor to scan.</p>
+                        <div id="qr-code-container">
+                             <button class="portal-btn" id="generate-qr-btn">Generate My QR Code</button>
+                             <div id="qr-code"></div>
+                        </div>
+                        <hr style="border-color: var(--border-color); margin: 20px 0;">
+                        <h2>Scan Instructor's QR</h2>
+                        <p>Use your device's camera to scan the QR code displayed by the instructor.</p>
+                        <button class="portal-btn" id="start-scan-btn">Start Camera Scan</button>
+                        <div id="student-reader" class="hidden"></div>
+                        <button class="portal-btn hidden" id="stop-scan-btn" style="background-color: var(--risk-high); margin-top: 10px;">Stop Camera</button>
+                    </div>
+                </div>
+                <div id="forum-panel" class="content-panel">
+                    <div class="glass-card">
+                        <div id="forum-posts-container">
+                           <!-- Forum posts injected by JS -->
+                        </div>
+                        <form id="new-post-form" class="glass-card" style="margin-top: 20px;">
+                            <h3>Create New Post</h3>
+                            <textarea id="new-post-content" placeholder="Share your thoughts..." required></textarea>
+                            <button type="submit">Post</button>
+                        </form>
+                    </div>
+                </div>
+                <div id="chatbot-panel" class="content-panel">
+                    <div class="glass-card" id="chatbot-container">
+                        <h2>AI Assistant <span id="chatbot-status" style="font-size: 0.8rem; color: var(--text-secondary);"></span></h2>
+                        <div class="chat-messages" id="chat-messages"></div>
+                        <div class="chat-suggestions" id="chat-suggestions"></div>
+                        <form id="chat-input-form">
+                            <input type="text" id="chat-input" placeholder="Ask me anything..." autocomplete="off">
+                            <button id="chat-send-btn" type="submit">→</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="action-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Action Logged</h2>
+            <p>The action has been logged successfully.</p>
+            <button class="modal-close-btn" onclick="closeModal('action-modal')">Close</button>
+        </div>
+    </div>
+    <div id="enroll-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Enroll New Student</h2>
+            <form id="enroll-form" class="login-form">
+                <div><label for="enroll-name">Full Name</label><input type="text" id="enroll-name" required></div>
+                <div><label for="enroll-age">Age</label><input type="number" id="enroll-age" required></div>
+                <div><label for="enroll-gpa">Current GPA</label><input type="number" step="0.1" id="enroll-gpa" required></div>
+                <div><label for="enroll-attendance">Attendance %</label><input type="number" id="enroll-attendance" required></div>
+                <div style="grid-column: 1 / -1;"><label for="enroll-failures">Prior Failures</label><input type="number" id="enroll-failures" required></div>
+                <button type="submit">Enroll Student</button>
+            </form>
+             <button class="modal-close-btn" onclick="closeModal('enroll-modal')" style="margin-top: 15px;">Cancel</button>
+        </div>
+    </div>
+    
+    <script type="module" src="script.js"></script>
+    
+    <script>
+        // This script for the background animation is unchanged and correct.
+        const canvas = document.getElementById('cosmic-background');
+        const ctx = canvas.getContext('2d');
+        let width, height, stars;
+
+        function init() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            stars = [];
+            for (let i = 0; i < 200; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    vx: Math.random() * 0.2 - 0.1,
+                    vy: Math.random() * 0.2 - 0.1
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'white';
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function update() {
+            stars.forEach(star => {
+                star.x += star.vx;
+                star.y += star.vy;
+                if (star.x < 0 || star.x > width) star.vx = -star.vx;
+                if (star.y < 0 || star.y > height) star.vy = -star.vy;
+            });
+        }
+
+        function animate() {
+            draw();
+            update();
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        animate();
+    </script>
+</body>
+</html>
