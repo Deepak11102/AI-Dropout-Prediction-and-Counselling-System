@@ -509,7 +509,7 @@ async function getGeminiResponse(prompt) {
         }
         
         // IMPORTANT: Replace this with your actual Render backend URL
-        const backendApiUrl = 'https://your-backend-service-name.onrender.com/chat';
+        const backendApiUrl = 'https://ai-dropout-prediction-and-counselling-zuz4.onrender.com/';
 
         const payload = {
             prompt: prompt,
@@ -653,5 +653,6 @@ function init() {
     const statusEl = document.getElementById('chatbot-status');
     if (statusEl) statusEl.textContent = "(Online)";
 }
+
 
 document.addEventListener('DOMContentLoaded', init);
