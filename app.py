@@ -68,3 +68,16 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
 
+'''
+
+ye curl reuest chala ke dekh lena sab chal ra h. and tune bahut bekar html, css js likhwai hai ai se. shi se kar vo
+
+
+curl -X POST http://localhost:5000/chat   -H "Content-Type: application/json"   -d '{
+        "prompt": "I am struggling with time management, what should I do?",
+        "student": {
+          "name": "Alice",
+          "gpa": 3.2
+        }
+      }'
+'''
