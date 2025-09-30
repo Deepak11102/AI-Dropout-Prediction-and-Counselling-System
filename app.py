@@ -6,7 +6,7 @@ import os
 
 app = Flask(__name__)
 CORS(app)
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key=AIzaSyCZsQMNUsIPP0YrtAeYVnjB7hsrFvobL9k"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyCZsQMNUsIPP0YrtAeYVnjB7hsrFvobL9k"
 
 
 @app.route('/chat', methods=['POST'])
@@ -67,5 +67,4 @@ def chat_with_gemini():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
 
