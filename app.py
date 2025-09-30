@@ -34,7 +34,7 @@ CORS(app)
 
 # --- CORRECTED KEY LOADING ---
 # The function will now look for the .env file in the same directory as app.py
-GEMINI_API_KEY = get_secret_from_file('AIzaSyCZsQMNUsIPP0YrtAeYVnjB7hsrFvobL9k')
+GEMINI_API_KEY = 'AIzaSyCZsQMNUsIPP0YrtAeYVnjB7hsrFvobL9k'
 
 # Check if the API key was found
 if not GEMINI_API_KEY:
@@ -43,7 +43,7 @@ if not GEMINI_API_KEY:
 
 
 # The API URL is now constructed using the key from the secret file
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key={GEMINI_API_KEY}"
 
 
 @app.route('/chat', methods=['POST'])
@@ -104,3 +104,4 @@ def chat_with_gemini():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
