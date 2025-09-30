@@ -509,7 +509,7 @@ async function getGeminiResponse(prompt) {
         }
         
         // IMPORTANT: Replace this with your actual Render backend URL
-        const backendApiUrl = 'https://ai-dropout-prediction-and-counselling-zuz4.onrender.com/';
+        const backendApiUrl = '';
 
         const payload = {
             prompt: prompt,
@@ -656,3 +656,4 @@ function init() {
 
 
 document.addEventListener('DOMContentLoaded', init);
+
