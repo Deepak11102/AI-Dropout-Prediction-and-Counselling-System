@@ -4,46 +4,9 @@ from flask_cors import CORS
 import requests
 import os
 
-# --- FINAL PERMANENT SOLUTION START ---
-def get_secret_from_file(key_to_find, filename=".env"):
-    """
-    Manually reads a .env file to find a specific key.
-    This is a robust alternative to python-dotenv.
-    """
-    try:
-        with open(filename, "r") as f:
-            for line in f:
-                # Ignore comments and empty lines
-                if line.strip() and not line.strip().startswith("#"):
-                    key, value = line.strip().split("=", 1)
-                    if key == key_to_find:
-                        return value
-    except FileNotFoundError:
-        # The .env file was not found
-        print(f"Warning: Secret file '{filename}' not found.")
-        return None
-    return None # Key was not found in the file
-# --- FINAL PERMANENT SOLUTION END ---
-
-
-# Initialize the Flask application
 app = Flask(__name__)
-# Enable Cross-Origin Resource Sharing (CORS)
 CORS(app)
-
-
-# --- CORRECTED KEY LOADING ---
-# The function will now look for the .env file in the same directory as app.py
-GEMINI_API_KEY = 'AIzaSyCZsQMNUsIPP0YrtAeYVnjB7hsrFvobL9k'
-
-# Check if the API key was found
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY could not be found in the .env secret file!")
-# --- CORRECTED KEY LOADING END ---
-
-
-# The API URL is now constructed using the key from the secret file
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key={GEMINI_API_KEY}"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key=AIzaSyCZsQMNUsIPP0YrtAeYVnjB7hsrFvobL9k"
 
 
 @app.route('/chat', methods=['POST'])
@@ -104,4 +67,5 @@ def chat_with_gemini():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
 
